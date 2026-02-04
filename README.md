@@ -23,3 +23,14 @@ A command-line based personal budget management application built using Python a
 
 ```bash
 python main.py
+
+## Screenshots
+
+### Main Application Interface
+![Main UI](screenshots/main_ui.png)
+
+### Deposit Transaction
+![Deposit Success](screenshots/deposit_success.png)
+
+### Expense Withdrawal
+![Withdraw Success](screenshots/withdraw_success.png)
