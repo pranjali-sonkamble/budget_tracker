@@ -1,6 +1,6 @@
 # Budget Tracker – Python
 
-A command-line based personal budget management application built using Python and Object-Oriented Programming.
+A command-line based personal budget management application built using Python and Object-Oriented Programming principles.
 
 ## Features
 - Create multiple budget categories
@@ -17,5 +17,9 @@ A command-line based personal budget management application built using Python a
 - Command Line Interface (CLI)
 
 ## How to Run
+1. Clone the repository or download the project files
+2. Navigate to the project folder
+3. Run the application:
+
 ```bash
 python main.py
