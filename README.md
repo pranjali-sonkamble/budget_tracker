@@ -37,5 +37,5 @@ python main.py
 ![Withdraw Success](screenshots/withdraw_success.png)
 
 ### View Category Balances
-![View Balances](screenshots/view_balances.png)
+![View Balances](screenshots/view_balance.png)
 
