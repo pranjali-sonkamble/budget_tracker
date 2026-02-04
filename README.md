@@ -23,6 +23,7 @@ A command-line based personal budget management application built using Python a
 
 ```bash
 python main.py
+```md
 
 ## Screenshots
 
