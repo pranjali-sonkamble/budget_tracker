@@ -34,3 +34,7 @@ python main.py
 
 ### Expense Withdrawal
 ![Withdraw Success](screenshots/withdraw_success.png)
+
+### View Category Balances
+![View Balances](screenshots/view_balances.png)
+
