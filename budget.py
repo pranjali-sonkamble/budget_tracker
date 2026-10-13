@@ -1,21 +1,24 @@
+import math
+
+
 class Category:
     def __init__(self, name: str):
         self.name = name
         self.ledger = []
 
     def deposit(self, amount: float, description: str = ""):
-        if amount <= 0:
-            raise ValueError("Deposit amount must be greater than zero.")
+        if not math.isfinite(amount) or amount <= 0:
+            raise ValueError("Deposit amount must be a finite number greater than zero.")
         self.ledger.append({"amount": amount, "description": description})
 
     def withdraw(self, amount: float, description: str = "") -> bool:
-        if amount <= 0 or not self.check_funds(amount):
+        if not math.isfinite(amount) or amount <= 0 or not self.check_funds(amount):
             return False
         self.ledger.append({"amount": -amount, "description": description})
         return True
 
     def transfer(self, amount: float, category) -> bool:
-        if amount <= 0 or category is self or not self.check_funds(amount):
+        if not math.isfinite(amount) or amount <= 0 or category is self or not self.check_funds(amount):
             return False
         self.withdraw(amount, f"Transfer to {category.name}")
         category.deposit(amount, f"Transfer from {self.name}")
@@ -25,7 +28,7 @@ class Category:
         return sum(item["amount"] for item in self.ledger)
 
     def check_funds(self, amount: float) -> bool:
-        return amount >= 0 and amount <= self.get_balance()
+        return math.isfinite(amount) and amount >= 0 and amount <= self.get_balance()
 
     def total_spent(self) -> float:
         return sum(-item["amount"] for item in self.ledger if item["amount"] < 0)
