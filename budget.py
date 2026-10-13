@@ -4,26 +4,28 @@ class Category:
         self.ledger = []
 
     def deposit(self, amount: float, description: str = ""):
+        if amount <= 0:
+            raise ValueError("Deposit amount must be greater than zero.")
         self.ledger.append({"amount": amount, "description": description})
 
     def withdraw(self, amount: float, description: str = "") -> bool:
-        if self.check_funds(amount):
-            self.ledger.append({"amount": -amount, "description": description})
-            return True
-        return False
+        if amount <= 0 or not self.check_funds(amount):
+            return False
+        self.ledger.append({"amount": -amount, "description": description})
+        return True
 
     def transfer(self, amount: float, category) -> bool:
-        if self.check_funds(amount):
-            self.withdraw(amount, f"Transfer to {category.name}")
-            category.deposit(amount, f"Transfer from {self.name}")
-            return True
-        return False
+        if amount <= 0 or category is self or not self.check_funds(amount):
+            return False
+        self.withdraw(amount, f"Transfer to {category.name}")
+        category.deposit(amount, f"Transfer from {self.name}")
+        return True
 
     def get_balance(self) -> float:
         return sum(item["amount"] for item in self.ledger)
 
     def check_funds(self, amount: float) -> bool:
-        return amount <= self.get_balance()
+        return amount >= 0 and amount <= self.get_balance()
 
     def total_spent(self) -> float:
         return sum(-item["amount"] for item in self.ledger if item["amount"] < 0)
@@ -39,13 +41,16 @@ class Category:
 
 
 def create_spend_chart(categories):
+    categories = list(categories)
+    if not categories:
+        return "No categories available to chart."
+
     spendings = [cat.total_spent() for cat in categories]
     total = sum(spendings)
+    if total <= 0:
+        return "No spending recorded yet."
 
-    percentages = [
-        (int((s / total) * 100) // 10) * 10 if total != 0 else 0
-        for s in spendings
-    ]
+    percentages = [(int((spent / total) * 100) // 10) * 10 for spent in spendings]
 
     chart = "Percentage spent by category\n"
 
