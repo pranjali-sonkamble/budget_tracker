@@ -1,5 +1,7 @@
+import math
 import tkinter as tk
 from tkinter import messagebox, ttk
+
 from budget import Category, create_spend_chart
 from storage import save_data, load_data
 
@@ -9,10 +11,10 @@ class BudgetApp:
         self.root = root
         self.root.title("Budget Tracker")
         self.root.geometry("520x420")
-
         self.categories = load_data()
-
         self.create_widgets()
+        # Persist changes when the user closes the window with the title-bar X.
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def create_widgets(self):
         tk.Label(self.root, text="Budget Tracker", font=("Arial", 16, "bold")).pack(pady=10)
@@ -43,10 +45,10 @@ class BudgetApp:
         tk.Label(transfer_frame, text="From").grid(row=0, column=0)
         tk.Label(transfer_frame, text="To").grid(row=0, column=2)
 
-        self.from_combo = ttk.Combobox(transfer_frame, values=self.get_category_names())
+        self.from_combo = ttk.Combobox(transfer_frame, values=self.get_category_names(), state="readonly")
         self.from_combo.grid(row=0, column=1, padx=5)
 
-        self.to_combo = ttk.Combobox(transfer_frame, values=self.get_category_names())
+        self.to_combo = ttk.Combobox(transfer_frame, values=self.get_category_names(), state="readonly")
         self.to_combo.grid(row=0, column=3, padx=5)
 
         tk.Button(transfer_frame, text="Transfer", command=self.transfer).grid(row=0, column=4, padx=5)
@@ -73,7 +75,21 @@ class BudgetApp:
             return
         self.categories[name] = Category(name)
         self.refresh_dropdowns()
-        messagebox.showinfo("Success", "Category added")
+        if self.save_changes():
+            messagebox.showinfo("Success", "Category added")
+        else:
+            messagebox.showwarning("Saved in session", "Category added, but could not be saved to disk.")
+
+    def _read_positive_amount(self):
+        try:
+            amount = float(self.amount_entry.get())
+        except ValueError:
+            messagebox.showerror("Error", "Enter a valid amount greater than zero")
+            return None
+        if not math.isfinite(amount) or amount <= 0:
+            messagebox.showerror("Error", "Amount must be a finite number greater than zero")
+            return None
+        return amount
 
     def deposit(self):
         self.transaction(is_withdraw=False)
@@ -86,13 +102,12 @@ class BudgetApp:
         if name not in self.categories:
             messagebox.showerror("Error", "Invalid category")
             return
-        try:
-            amount = float(self.amount_entry.get())
-        except ValueError:
-            messagebox.showerror("Error", "Invalid amount")
+
+        amount = self._read_positive_amount()
+        if amount is None:
             return
 
-        desc = self.desc_entry.get()
+        desc = self.desc_entry.get().strip()
         cat = self.categories[name]
 
         if is_withdraw:
@@ -102,6 +117,9 @@ class BudgetApp:
         else:
             cat.deposit(amount, desc)
 
+        if not self.save_changes():
+            messagebox.showwarning("Save warning", "Transaction succeeded in this session, but saving to disk failed.")
+            return
         messagebox.showinfo("Success", "Transaction successful")
 
     def transfer(self):
@@ -109,19 +127,23 @@ class BudgetApp:
         to_cat = self.to_combo.get()
 
         if from_cat not in self.categories or to_cat not in self.categories:
-            messagebox.showerror("Error", "Invalid categories")
+            messagebox.showerror("Error", "Select valid source and destination categories")
+            return
+        if from_cat == to_cat:
+            messagebox.showerror("Error", "Choose two different categories")
             return
 
-        try:
-            amount = float(self.amount_entry.get())
-        except ValueError:
-            messagebox.showerror("Error", "Invalid amount")
+        amount = self._read_positive_amount()
+        if amount is None:
             return
 
         if not self.categories[from_cat].transfer(amount, self.categories[to_cat]):
             messagebox.showerror("Error", "Insufficient funds")
             return
 
+        if not self.save_changes():
+            messagebox.showwarning("Save warning", "Transfer succeeded in this session, but saving to disk failed.")
+            return
         messagebox.showinfo("Success", "Transfer completed")
 
     def view_balances(self):
@@ -134,6 +156,24 @@ class BudgetApp:
         chart = create_spend_chart(self.categories.values())
         messagebox.showinfo("Spending Chart", chart)
 
+    def save_changes(self):
+        try:
+            save_data(self.categories)
+            return True
+        except (OSError, TypeError, ValueError) as exc:
+            messagebox.showerror("Save error", f"Could not save budget data: {exc}")
+            return False
+
+    def on_close(self):
+        if self.save_changes():
+            self.root.destroy()
+        else:
+            should_close = messagebox.askyesno(
+                "Save failed",
+                "Your latest changes could not be saved. Close anyway and risk losing them?"
+            )
+            if should_close:
+                self.root.destroy()
+
     def save_and_exit(self):
-        save_data(self.categories)
-        self.root.destroy()
+        self.on_close()
